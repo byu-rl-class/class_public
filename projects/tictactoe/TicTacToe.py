@@ -4,19 +4,30 @@ import time
 
 class TicTacToe:
     def __init__(self):
-        # Initialize the board as a list of empty strings
+        """
+        Initializes the TicTacToe game. 
+        The board is a list of 9 empty strings, and the current winner is None.
+        """
         self.board = [' ' for _ in range(9)]
         self.current_winner = None  # Keep track of the winner!
 
     def make_move(self, square, letter):
         # If the move is valid, make the move (assign square to letter)
         # Then return True. If invalid, return False.
-        if self.board[square] == ' ':
+        if self.is_valid_move(square, letter):
             self.board[square] = letter
             if self.winner(square, letter):
                 self.current_winner = letter
             return True
         return False
+
+    def is_valid_move(self, square, letter):
+        if self.board[square] == ' ':
+            return True
+        return False
+
+    def get_valid_moves(self, letter):
+        return [i for i, x in enumerate(self.board) if x == ' ' and self.is_valid_move(i, letter)]
 
     def result(self):
         # Determine the result of the current board state

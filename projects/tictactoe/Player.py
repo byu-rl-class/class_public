@@ -90,19 +90,17 @@ class RLPlayer(Player):
         super().__init__(letter)
         self.V = {}                      # State-value function
         self.policy = {}                 # Policy mapping state to action
-        self.states = []                 # List of all states encountered
-        self.gamma = 1                   # Discount factor
-        self.epsilon = .0001             # Convergence constant
-       
+
     ############################################################################
     # this is the function you will implement policy iteration with Monte-Carlo
     # simulation for the policy evaluation step
     ##########################################################
-    def train(self):
+    def train(self, eta_type = 'standard', N = 1000, gamma = 0.1, epsilon = .001, opponent_policy = 'random', max_iterations = 100):
         pass
     def get_state(self, game):
         # Convert the board to a tuple (immutable and hashable)
         return tuple(game.board)
+    
     def get_move(self, game):
         state = self.get_state(game)
         available_moves = game.empty_squares()
