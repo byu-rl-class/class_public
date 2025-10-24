@@ -90,6 +90,7 @@ class RLPlayer(Player):
         super().__init__(letter)
         self.V = {}                      # State-value function
         self.policy = {}                 # Policy mapping state to action
+        self.all_possible_states = []             # List of all possible states for the player
 
     ############################################################################
     # this is the function you will implement policy iteration with Monte-Carlo
@@ -110,22 +111,41 @@ class RLPlayer(Player):
         return self.policy[state]
         
     def generate_all_states(self, game, player_turn):
-        # Generate all possible states where it's RLPlayer's turn
+        """
+        Generate all possible states for the game.
+        Populate self.all_possible_states with all possible states for the player given the current state of the game.
+
+        It is recommended to run this at the beginning of the training process once to generate all possible states for the player.
+
+        input:
+            game: the current game object (TicTacToe)
+            player_turn: the player whose turn it is (self.letter or self.opponent_letter)
+        output:
+            None
+        side effects:
+            Populates self.all_possible_states with all possible states for the player given the current state of the game.
+        """
         state = self.get_state(game)
+
         # Only add the state if it's RLPlayer's turn
-        if player_turn == self.letter and state not in self.states:
-            self.states.append(state)
+        if player_turn == self.letter and state not in self.all_possible_states:
+            self.all_possible_states.append(state)
+
         # Check for terminal state
         if game.current_winner or game.is_full():
             return
+
         for action in game.empty_squares():
             # Make a copy of the game
             game_copy = TicTacToe()
             game_copy.board = game.board.copy()
             game_copy.current_winner = game.current_winner
+
             # Make a move
             game_copy.make_move(action, player_turn)
+
             # Switch player turn
             next_player_turn = 'O' if player_turn == 'X' else 'X'
+
             # Recursively generate states
             self.generate_all_states(game_copy, next_player_turn)

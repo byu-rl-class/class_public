@@ -45,3 +45,4 @@ print(result)
 #         }
 
 # print(evaluate_performance(p1, p2))
+# game.play(p2, p1)

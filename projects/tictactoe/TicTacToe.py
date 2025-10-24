@@ -1,5 +1,51 @@
 # TicTacToe.py
 
+"""
+state space: all possible board configurations represented by a tuple of 9 characters ('X', 'O', or ' ') stored in a list called self.board.
+    indices of the board:
+        0 | 1 | 2
+        --+---+--
+        3 | 4 | 5
+        --+---+--
+        6 | 7 | 8
+    e.g. self.board = ['X', 'O', 'X', ' ', 'X', 'O', 'X', 'O', ' '] represents the board:
+        X | O | X
+        --+---+--
+        O |   | X
+        --+---+--
+        O | X |  
+
+action space: all possible moves represented by an integer index of the board.
+    eg. 0, 1, 2, 3, 4, 5, 6, 7, 8
+
+reward function (you will need to implement this in Player.py):
+    +1 for win
+    -1 for loss
+    0 for tie
+
+    Note: This means you will need to maximize the reward for your agent. 
+          If you want to minimize instead, then you can just negate the reward.
+
+The class TicTacToe keeps track of the state of the game (self.board) and the current winner (self.current_winner)
+
+list of class methods:
+    make_move(square, letter)
+    is_valid_move(square, letter)
+    get_valid_moves(letter)
+    result()
+    check_winner()
+    winner(square, letter)
+    empty_squares()
+    num_empty_squares()
+    is_full()
+    print_board()
+    print_board_nums()
+    reset()
+    play(player_x, player_o, print_game=True)
+    print_game()
+    print_game_nums()
+"""
+
 import time
 
 class TicTacToe:
@@ -12,6 +58,11 @@ class TicTacToe:
         self.current_winner = None  # Keep track of the winner!
 
     def make_move(self, square, letter):
+        """
+        If the move is valid, make the move (assign square to letter)
+        Then return True. If invalid, return False.
+        Updates the current winner if the move is a winning move
+        """
         # If the move is valid, make the move (assign square to letter)
         # Then return True. If invalid, return False.
         if self.is_valid_move(square, letter):
@@ -30,11 +81,14 @@ class TicTacToe:
         return [i for i, x in enumerate(self.board) if x == ' ' and self.is_valid_move(i, letter)]
 
     def result(self):
-        # Determine the result of the current board state
-        # 'X' - player 'X' won
-        # 'O' - player 'O' won
-        # 'T' - tie
-        # 'not done' - game is not over
+        """
+        Determine the result of the current board state.
+        Returns:
+            'X' - player 'X' won
+            'O' - player 'O' won
+            'T' - tie
+            'not done' - game is not over
+        """
         winner = self.check_winner()
         if winner:
             return winner
@@ -44,7 +98,13 @@ class TicTacToe:
             return 'not done'  # Game is not over
 
     def check_winner(self):
-        # Check the current board for a winner without relying on current_winner
+        """
+        Check the current board for a winner without relying on current_winner
+        Returns:
+            'X' - player 'X' won
+            'O' - player 'O' won
+            None - no winner
+        """
         for letter in ['X', 'O']:
             # Check rows
             for row in range(3):
@@ -62,6 +122,14 @@ class TicTacToe:
         return None  # No winner
 
     def winner(self, square, letter):
+        """
+        Check if the player has won by checking the row, column, and diagonals.
+        input:
+            square: the index of the board to check
+            letter: the letter of the player making the move ('X' or 'O')
+        output:
+            True if the player has won, False otherwise
+        """
         # Check if the player has won
         row_ind = square // 3
         row = self.board[row_ind*3:(row_ind+1)*3]
@@ -110,7 +178,9 @@ class TicTacToe:
         self.current_winner = None
 
     def play(self, player_x, player_o, print_game=True):
-        # Simulate a game between two players
+        """
+        Simulate a game between two players
+        """
         if print_game:
             self.print_board_nums()
 
@@ -149,7 +219,9 @@ class TicTacToe:
         return None  # Return None if it's a tie
 
     def print_board_nums(self):
-        # Prints the board with numbers (for reference)
+        """
+        Prints the board with numbers (for reference)
+        """
         number_board = [[str(i) for i in range(j*3, (j+1)*3)] for j in range(3)]
         flag = False
         for row in number_board:
@@ -158,4 +230,6 @@ class TicTacToe:
             else:
                 flag = True
             print('  ' + ' | '.join(row) + '  ')
+
+    
 
