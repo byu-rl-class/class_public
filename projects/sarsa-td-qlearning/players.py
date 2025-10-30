@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 import random
 
 class SARSAAgent:
-    def __init__(self, env, alpha=0.5, gamma=1.0, epsilon=0.1):
+    def __init__(self, env, eta=0.5, gamma=1.0, epsilon=0.1):
         self.env = env
-        self.alpha = alpha
+        self.eta = eta
         self.gamma = gamma
         self.epsilon = epsilon
         self.q_values = np.zeros((env.height, env.width, 4))
@@ -24,9 +24,9 @@ class SARSAAgent:
         return self.q_values, self.rewards_per_episode
 
 class QLearningAgent:
-    def __init__(self, env, alpha=0.5, gamma=1.0, epsilon=0.1):
+    def __init__(self, env, eta=0.5, gamma=1.0, epsilon=0.1):
         self.env = env
-        self.alpha = alpha
+        self.eta = eta
         self.gamma = gamma
         self.epsilon = epsilon
         self.q_values = np.zeros((env.height, env.width, 4))
@@ -46,9 +46,9 @@ class QLearningAgent:
         return self.q_values, self.rewards_per_episode
 
 class TDLambdaAgent:
-    def __init__(self, env, alpha=0.5, gamma=1.0, epsilon=0.1, lam=0.9):
+    def __init__(self, env, eta=0.5, gamma=1.0, epsilon=0.1, lam=0.9):
         self.env = env
-        self.alpha = alpha
+        self.eta = eta
         self.gamma = gamma
         self.epsilon = epsilon
         self.lam = lam
@@ -83,7 +83,7 @@ class TDLambdaAgent:
             3: [0, 2]   # Left -> Up, Down
         }
 
-        action_probs = [self.env.prob1, self.env.prob2, self.env.prob3]
+        action_probs = [self.env.correct_action_prob, self.env.perpendicular_prob, self.env.perpendicular_prob]
         actual_actions = [action] + perpendicular_actions[action]
         actual_action = random.choices(actual_actions, weights=action_probs, k=1)[0]
 
