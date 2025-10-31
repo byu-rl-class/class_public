@@ -83,7 +83,7 @@ class TDLambdaAgent:
             3: [0, 2]   # Left -> Up, Down
         }
 
-        action_probs = [self.env.correct_action_prob, self.env.perpendicular_prob, self.env.perpendicular_prob]
+        action_probs = [self.env.prob_correct_action, self.env.prob_left, self.env.prob_right]
         actual_actions = [action] + perpendicular_actions[action]
         actual_action = random.choices(actual_actions, weights=action_probs, k=1)[0]
 

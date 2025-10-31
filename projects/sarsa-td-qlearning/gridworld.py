@@ -18,9 +18,9 @@ class GridWorld:
         self.cliff_height = 2
         self.cliff_width = 6 
         self.reset()
-        self.prob1 = 0.8  # Probability that the correct action is taken
-        self.prob2 = 0.1  # Probability it veers one way
-        self.prob3 = 0.1  # Probability it veers the other way
+        self.prob_correct_action = 0.8  # Probability that the correct action is taken
+        self.prob_left = 0.1  # Probability it veers one way
+        self.prob_right = 0.1  # Probability it veers the other way
 
         # Define the cliff, which is a list of tuples (x, y)
         self.cliff = []
@@ -58,18 +58,18 @@ class GridWorld:
         }
 
         # Determine the actual action taken based on probabilities
-        action_probs = [self.prob1, self.prob2, self.prob3]
+        action_probs = [self.prob_correct_action, self.prob_left, self.prob_right]
         actual_actions = [action] + perpendicular_actions[action]
         actual_action = random.choices(actual_actions, weights=action_probs, k=1)[0]
 
         x, y = self.state
         if actual_action == UP:
             x = max(x - 1, 0)
-        elif action == RIGHT:
+        elif actual_action == RIGHT:
             y = min(y + 1, self.width - 1)
-        elif action == DOWN:
+        elif actual_action == DOWN:
             x = min(x + 1, self.height - 1)
-        elif action == LEFT:
+        elif actual_action == LEFT:
             y = max(y - 1, 0)
 
         next_state = (x, y)
