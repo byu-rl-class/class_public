@@ -2,8 +2,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 
+def _eta_for(eta, state, t, N_visits):
+    if isinstance(eta, (float, int)):
+        return float(eta)
+    val = float(eta(state, t, N_visits))
+    if not np.isfinite(val) or val < 0:
+        raise ValueError(f"eta() must return a nonnegative finite float; got {val}")
+    return val
+
 class SARSAAgent:
-    def __init__(self, env, eta=0.5, gamma=1.0, epsilon=0.1):
+    def __init__(self, env, eta=0.5, gamma=0.9, epsilon=0.1):
         self.env = env
         self.eta = eta
         self.gamma = gamma
@@ -16,6 +24,7 @@ class SARSAAgent:
             return np.random.choice(self.env.get_actions())
         else:
             return np.argmax(self.q_values[state[0], state[1]])
+
     #############################################
     # IMPLEMENT ALGORITHM IN THE TRAIN FUNCTION #
     #############################################
@@ -24,7 +33,7 @@ class SARSAAgent:
         return self.q_values, self.rewards_per_episode
 
 class QLearningAgent:
-    def __init__(self, env, eta=0.5, gamma=1.0, epsilon=0.1):
+    def __init__(self, env, eta=0.5, gamma=0.9, epsilon=0.1):
         self.env = env
         self.eta = eta
         self.gamma = gamma
@@ -46,7 +55,7 @@ class QLearningAgent:
         return self.q_values, self.rewards_per_episode
 
 class TDLambdaAgent:
-    def __init__(self, env, eta=0.5, gamma=1.0, epsilon=0.1, lam=0.9):
+    def __init__(self, env, eta=0.5, gamma=0.9, epsilon=0.1, lam=0.9):
         self.env = env
         self.eta = eta
         self.gamma = gamma
@@ -66,11 +75,17 @@ class TDLambdaAgent:
             for action in actions:
                 next_state = self.simulated_step(state, action)
                 value = self.v_values[next_state[0], next_state[1]]
+                # handle infinite values, preventing NaNs
+                if not np.isfinite(value):
+                    value = float('inf')
                 if value < min_value:
                     min_value = value
                     best_actions = [action]
                 elif value == min_value:
                     best_actions.append(action)
+            # if no best actions, choose a random action
+            if len(best_actions) == 0:
+                return np.random.choice(actions)
             return np.random.choice(best_actions)
 
     def simulated_step(self, state, action):
@@ -110,6 +125,122 @@ class TDLambdaAgent:
     def train(self, num_episodes):
         pass
         return self.v_values, self.rewards_per_episode
+
+class OptimalAgent:
+    def __init__(self, env, gamma=0.9):
+        self.env = env
+        self.gamma = gamma
+        self.height = env.height
+        self.width = env.width
+        self.actions = env.get_actions()
+        self.perp = {0: [3, 1], 1: [0, 2], 2: [3, 1], 3: [0, 2]}
+        self.V = np.zeros((self.height, self.width))
+        self.policy = np.zeros((self.height, self.width), dtype=int)
+
+    def _step_det(self, state, actual_action):
+        x, y = state
+        if actual_action == 0:
+            x = max(x - 1, 0)
+        elif actual_action == 1:
+            y = min(y + 1, self.width - 1)
+        elif actual_action == 2:
+            x = min(x + 1, self.height - 1)
+        elif actual_action == 3:
+            y = max(y - 1, 0)
+        next_state = (x, y)
+        if next_state in self.env.cliff:
+            next_state = state
+        return next_state
+
+    def value_iteration(self, epsilon=1e-8, max_iter=10000):
+        V = np.zeros((self.height, self.width))
+        goal = self.env.goal_state
+        prob_correct_action, prob_left, prob_right = self.env.prob_correct_action, self.env.prob_left, self.env.prob_right
+        
+        iterations = 0
+        for _ in range(max_iter):
+            iterations += 1
+            delta = 0.0
+            V_new = V.copy()
+            for i in range(self.height):
+                for j in range(self.width):
+                    s = (i, j)
+                    if s == goal:
+                        V_new[i, j] = 0.0
+                        continue
+                    q_vals = []
+                    for a in self.actions:
+                        next_states = [
+                            self._step_det(s, a),
+                            self._step_det(s, self.perp[a][0]),
+                            self._step_det(s, self.perp[a][1])
+                        ]
+                        probs = [prob_correct_action, prob_left, prob_right]
+                        # aggregate in case of duplicates
+                        exp = 0.0
+                        for p, s_next in zip(probs, next_states):
+                            r = -1.0
+                            v_next = 0.0 if s_next == goal else V[s_next[0], s_next[1]]
+                            exp += p * (r + self.gamma * v_next)
+                        q_vals.append(exp)
+                    V_new[i, j] = max(q_vals)
+                    delta = max(delta, abs(V_new[i, j] - V[i, j]))
+            V = V_new
+            if delta < epsilon:
+                break
+
+        if iterations < max_iter:
+            print(f"Value iteration converged in {iterations} iterations")
+        else:
+            print(f"Value iteration did not converge in {max_iter} iterations, outputting last iteration")
+
+        # Derive greedy policy
+        pi = np.zeros((self.height, self.width), dtype=int)
+        for i in range(self.height):
+            for j in range(self.width):
+                s = (i, j)
+                if s == goal:
+                    pi[i, j] = 0
+                    continue
+                best_a = 0
+                best_q = -1e18
+                for a in self.actions:
+                    next_states = [
+                        self._step_det(s, a),
+                        self._step_det(s, self.perp[a][0]),
+                        self._step_det(s, self.perp[a][1])
+                    ]
+                    probs = [prob_correct_action, prob_left, prob_right]
+                    q = 0.0
+                    for p, s_next in zip(probs, next_states):
+                        r = -1.0
+                        v_next = 0.0 if s_next == goal else V[s_next[0], s_next[1]]
+                        q += p * (r + self.gamma * v_next)
+                    if q > best_q:
+                        best_q = q
+                        best_a = a
+                pi[i, j] = best_a
+        self.V = V
+        self.policy = pi
+        return V, pi
+
+    def evaluate(self, num_episodes):
+        rewards = []
+        # Ensure we have a policy
+        if np.all(self.V == 0) and (self.env.start_state != self.env.goal_state):
+            self.value_iteration()
+        for _ in range(num_episodes):
+            state = self.env.reset()
+            total = 0
+            while True:
+                a = self.policy[state[0], state[1]]
+                next_state, reward, done = self.env.step(a)
+                total += reward
+                state = next_state
+                if done:
+                    break
+            rewards.append(total)
+        return rewards
 
 def plot_rewards(rewards_list, labels):
     for rewards, label in zip(rewards_list, labels):
