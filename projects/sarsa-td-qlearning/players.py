@@ -295,35 +295,8 @@ def print_policy_q(q_values, env):
     for row in policy:
         print(' '.join(row))
 
-def print_policy_v(v_values, env):
-    policy = np.chararray((env.height, env.width), unicode=True)
-    actions_symbols = ['↑', '→', '↓', '←']
-    actions = env.get_actions()
-    td_lambda_agent = TDLambdaAgent(env)
-    for i in range(env.height):
-        for j in range(env.width):
-            state = (i, j)
-            if state == env.goal_state:
-                policy[i, j] = 'G'
-            elif state in env.cliff:
-                policy[i, j] = 'C'
-            else:
-                min_value = float('inf')
-                best_actions = []
-                for action in actions:
-                    next_state = td_lambda_agent.simulated_step(state, action)
-                    value = v_values[next_state[0], next_state[1]]
-                    if value < min_value:
-                        min_value = value
-                        best_actions = [action]
-                    elif value == min_value:
-                        best_actions.append(action)
-                best_action = np.random.choice(best_actions)
-                policy[i, j] = actions_symbols[best_action]
-    for row in policy:
-        print(' '.join(row))
 
-def print_policy_optimal(policy, env):
+def print_policy_from_policy(policy, env):
     policy_chars = np.chararray((env.height, env.width), unicode=True)
     actions_symbols = ['↑', '→', '↓', '←']
     for i in range(env.height):
