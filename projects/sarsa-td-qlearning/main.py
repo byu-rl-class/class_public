@@ -38,7 +38,8 @@ print_policy_q(sarsa_q_values, env)
 print("\nPolicy derived from Q-Learning:")
 print_policy_q(q_learning_q_values, env)
 print("\nPolicy derived from TD(λ):")
-print_policy_from_policy(TDLambdaAgent.policy, env)
+print_policy_from_policy(td_lambda_agent.policy, env)
 
 print("\nOptimal policy (from value iteration):")
+
 print_policy_from_policy(pi_opt, env)
