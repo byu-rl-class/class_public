@@ -70,18 +70,18 @@ class TDLambdaAgent:
             return np.random.choice(actions)
         else:
             # Select action leading to state with minimum V(s')
-            min_value = float('inf')
+            max_value = float('-inf')
             best_actions = []
             for action in actions:
                 next_state = self.simulated_step(state, action)
                 value = self.v_values[next_state[0], next_state[1]]
                 # handle infinite values, preventing NaNs
                 if not np.isfinite(value):
-                    value = float('inf')
-                if value < min_value:
-                    min_value = value
+                    value = float('-inf')
+                if value > max_value:
+                    max_value = value
                     best_actions = [action]
-                elif value == min_value:
+                elif value == max_value:
                     best_actions.append(action)
             # if no best actions, choose a random action
             if len(best_actions) == 0:
@@ -168,6 +168,9 @@ class OptimalAgent:
                     if s == goal:
                         V_new[i, j] = 0.0
                         continue
+                    if s in self.env.cliff:
+                        V_new[i, j] = np.nan
+                        continue
                     q_vals = []
                     for a in self.actions:
                         next_states = [
@@ -202,6 +205,9 @@ class OptimalAgent:
                 if s == goal:
                     pi[i, j] = 0
                     continue
+                if s in self.env.cliff:
+                    pi[i, j] = 0
+                    continue
                 best_a = 0
                 best_q = -1e18
                 for a in self.actions:
@@ -226,20 +232,43 @@ class OptimalAgent:
 
     def evaluate(self, num_episodes):
         rewards = []
+        discounted_rewards = []
         # Ensure we have a policy
         if np.all(self.V == 0) and (self.env.start_state != self.env.goal_state):
             self.value_iteration()
         for _ in range(num_episodes):
             state = self.env.reset()
             total = 0
+            discounted_total = 0.0
+            t = 0
             while True:
                 a = self.policy[state[0], state[1]]
                 next_state, reward, done = self.env.step(a)
                 total += reward
+                discounted_total += (self.gamma ** t) * reward
                 state = next_state
                 if done:
                     break
+                t += 1
             rewards.append(total)
+            discounted_rewards.append(discounted_total)
+        # Summarize performance and optionally check against DP value at start
+        try:
+            avg_reward = float(np.mean(rewards)) if len(rewards) > 0 else float('nan')
+            avg_discounted_reward = float(np.mean(discounted_rewards)) if len(discounted_rewards) > 0 else float('nan')
+        except Exception:
+            avg_reward = float('nan')
+            avg_discounted_reward = float('nan')
+        start = self.env.start_state
+        v_start = self.V[start[0], start[1]]
+        # Print both undiscounted and discounted averages
+        # print(f"Average total reward over {num_episodes} episodes (undiscounted): {avg_reward:.3f}")
+        print(f"Average discounted reward over {num_episodes} episodes (gamma={self.gamma}): {avg_discounted_reward:.3f}")
+        if np.isfinite(avg_discounted_reward) and np.isfinite(v_start):
+            print(f"DP V(start): {v_start:.3f}")
+            print(f"Difference (avg_discounted - V(start)): {avg_discounted_reward - v_start:.3f}")
+        else:
+            print(f"DP V(start): {v_start}")
         return rewards
 
 def plot_rewards(rewards_list, labels):
@@ -292,4 +321,19 @@ def print_policy_v(v_values, env):
                 best_action = np.random.choice(best_actions)
                 policy[i, j] = actions_symbols[best_action]
     for row in policy:
+        print(' '.join(row))
+
+def print_policy_optimal(policy, env):
+    policy_chars = np.chararray((env.height, env.width), unicode=True)
+    actions_symbols = ['↑', '→', '↓', '←']
+    for i in range(env.height):
+        for j in range(env.width):
+            state = (i, j)
+            if state == env.goal_state:
+                policy_chars[i, j] = 'G'
+            elif state in env.cliff:
+                policy_chars[i, j] = 'C'
+            else:
+                policy_chars[i, j] = actions_symbols[policy[i, j]]
+    for row in policy_chars:
         print(' '.join(row))
